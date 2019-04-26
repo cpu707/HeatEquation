@@ -9,6 +9,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import imageio
 import os #shutil
+import matplotlib.animation as manimation
 
 #%% Constants in SI Units
 alpha = 0.3; # albedo
