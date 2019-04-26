@@ -142,7 +142,6 @@ locs, labels = plt.yticks()
 time_list = dt*(np.array(list(range(1,nt+1)))) #in seconds, can convert later
 time_hours = time_list/3600.0
 
-
 #Plot time evolution of surface temperature
 title_T_it=f"Surface Temperature Evolution after {t_days:.2f} days"
 plt.plot(time_hours,top_ice_temp_list,label="Top of Ice Surface Temperature")
