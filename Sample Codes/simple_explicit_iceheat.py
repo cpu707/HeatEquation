@@ -54,7 +54,7 @@ plt.close()
 
 # Time parameters
 dt = 0.5; # time between iterations, in seconds
-nt = 200000; # amount of iterations
+nt = 15000; # amount of iterations
 t_days = (dt*nt)/86400.0
 
 # Calculate r, want ~0.25, must be < 0.5 (for explicit method)
@@ -69,7 +69,7 @@ air_temp_list = []
 #%% Start Iteration and prepare plots
 
 #first, clear the folder with the images to make room for new ones
-folder = "figures/giffiles"
+folder = "giffiles"
 filelist = [f for f in os.listdir(folder)]
 for f in filelist:
     os.remove(os.path.join(folder, f))
@@ -81,17 +81,20 @@ for i in range(0,nt):
     
     # time in seconds to hours on a 24-hour clock will be used for radiation function
     
-    print(f"i={i}/{nt}, hr={(i*dt/3600)%24:.4f}")
+    
+    print(f"i={i}/{nt}, %={(i/nt)*100:.1f}, hr={(i*dt/3600)%24:.4f}")
     
     #Now set the top root as the new BC for Tsoln
     Tsoln[0]=air_temp((i+1)*dt)
+    
     
     #Make sure the bottom BC is still 0 degrees C
     Tsoln[-1]=273.15
     
     # Now add the values to their respective lists
     air_temp_list.append(air_temp(i*dt))
-    
+    top_ice_temp_list.append(Tsoln[0])
+        
     # Let's make a movie!
     if (i*dt)%60 == 0: #every 30 seconds
         title = str(int((i*dt)//60))
@@ -103,21 +106,21 @@ for i in range(0,nt):
         plt.xlabel("x (m)")
         plt.ylabel("Temperature (K)")
         plt.tight_layout()
-        plt.savefig("figures/giffiles/plot"+title+".png")
+        plt.savefig("giffiles/plot"+title+".png")
         plt.close()
     
     #update Tsoln before next time step
     Tsoln_pr = Tsoln
 
-#%% Movie Time
+0#%% Movie Time
 
-png_dir = 'figures/giffiles/'
+png_dir = 'giffiles/'
 images = []
 for file_name in os.listdir(png_dir):
     if file_name.endswith('.png'):
         file_path = os.path.join(png_dir, file_name)
         images.append(imageio.imread(file_path))
-imageio.mimsave('figures/icemovie.gif',images)
+imageio.mimsave('icemovie.gif',images)
 
 #%% Plotting Main Results
 locs, labels = plt.yticks()
@@ -132,7 +135,7 @@ plt.xlabel("x (m)")
 plt.ylabel("Temperature (K)")
 plt.legend()
 plt.tight_layout()
-plt.savefig("figures/ice_temp_distribution.png")
+plt.savefig("/ice_temp_distribution.png")
 plt.close()
 
 #%% Some more output
@@ -152,5 +155,10 @@ plt.xlabel("Time (hr)")
 plt.ylabel('Temperature (K)')
 plt.legend()
 plt.tight_layout()
-plt.savefig("figures/surface_temp_temporal.png")
+plt.savefig("surface_temp_temporal.png")
 plt.close()
+
+folder = "giffiles"
+filelist = [f for f in os.listdir(folder)]
+for f in filelist:
+    os.remove(os.path.join(folder, f))
