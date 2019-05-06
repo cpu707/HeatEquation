@@ -35,7 +35,7 @@ dx = L/n; # length between nodes
 
 # Time parameters
 dt = 0.5; # time between iterations, in seconds
-nt = 60000; # amount of iterations
+nt = 5000; # amount of iterations
 t_days = (dt*nt)/86400.0
 
 r = ((alpha_ice)*(dt))/(2*dx*dx); # stability condition
@@ -85,7 +85,6 @@ for f in filelist:
 Tsoln = np.full(n+1, 272.65)
 
 
-
 for i in range(0,nt):
     # Run through the FTCS with these BC
     
@@ -117,6 +116,7 @@ for i in range(0,nt):
     air_temp_list.append(air_temp(i*dt))
 
     top_ice_temp_list.append(Tsoln[0])
+    
     # Let's make a movie!
     if (i*dt)%60 == 0: #every 30 seconds
         title = str(int((i*dt)//60))
@@ -179,3 +179,8 @@ plt.tight_layout()
 plt.savefig("figures/surface_temp_temporal.png")
 plt.close()
 
+#finally, clear the folder with the images to make room for new ones
+folder = "figures/giffiles"
+filelist = [f for f in os.listdir(folder)]
+for f in filelist:
+    os.remove(os.path.join(folder, f))
