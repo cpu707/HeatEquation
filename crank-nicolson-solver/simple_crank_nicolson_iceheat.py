@@ -8,6 +8,7 @@ import imageio
 import os #shutil
 import matplotlib.animation as manimation
 from scipy import sparse
+import stat
 
 #%% Physical Constants in SI Units
 alpha = 0.3; # albedo
@@ -29,13 +30,13 @@ def air_temp(t): #t is in seconds, so dt*i would be evaluated
 
 # Space mesh
 L = 2.0; # depth of sea ice
-n = 400; # number of nodes
-x = np.linspace(0.0,L,n+1); #space mesh
-dx = L/n; # length between nodes
+n = 401; # number of nodes
+x = np.linspace(0.0,L,n); #space mesh
+dx = L/(n-1); # length between nodes
 
 # Time parameters
 dt = 0.5; # time between iterations, in seconds
-nt = 200000; # amount of iterations
+nt = 6000; # amount of iterations
 t_days = (dt*nt)/86400.0
 
 r = ((alpha_ice)*(dt))/(2*dx*dx); # stability condition
@@ -49,26 +50,30 @@ diff_time_scale = (float(L**2))/(alpha_ice) #in seconds
 #Create the matrices in the C_N scheme
 #these do not change during the iterations
 
-A = sparse.diags([-r, 1+2*r, -r], [-1, 0, 1], shape = (n-1,n-1)).toarray()
-B = sparse.diags([r, 1-2*r, r], [-1, 0, 1], shape = (n-1,n-1)).toarray()
-b = 
+A = sparse.diags([-r, 1+2*r, -r], [-1, 0, 1], shape = (n-2,n-2)).toarray()
+B = sparse.diags([r, 1-2*r, r], [-1, 0, 1], shape = (n-2,n-2)).toarray()
+b = np.zeros((n-2))
+b[0]=air_temp(0.0)*r
+b[-1]=273.15*r
 #plt.matshow(A)
 #plt.matshow(B)
 
-
-
 #inital profile
 #base this off of x, defined above
-init = np.full(n+1, 272.65)
+u = np.full(n, 272.65)
+#set initial BC as well
+u[0]=air_temp(0.0)
+u[-1]=273.15
 
 #%% Initial and boudnary conditions
 
 # Now we have a initial linear distribution of temperature in the sea ice
-plt.plot(x,Tsoln_pr,"g-",label="Initial Profile")
+plt.plot(x,u,"g-",label="Initial Profile")
 plt.title("Initial Distribution of Temperature in Sea Ice")
-plt.close()
+#plt.close()
 
-
+#initially solve right hand side of matrix equation
+rhs = B.dot(u[1:-1])+b
 
 #Create an empty list for outputs and plots
 top_ice_temp_list = []
@@ -78,62 +83,81 @@ air_temp_list = []
 #%% Start Iteration and prepare plots
 
 #first, clear the folder with the images to make room for new ones
-folder = "figures/giffiles"
-filelist = [f for f in os.listdir(folder)]
-for f in filelist:
-    os.remove(os.path.join(folder, f))
+os.chmod('D:\Coursework\APC 523 Numerical Algorithms\HeatEquation\crank-nicolson-solver\giffiles',stat.S_IRWXO)
+import shutil
+shutil.rmtree('D:\Coursework\APC 523 Numerical Algorithms\HeatEquation\crank-nicolson-solver\giffiles')
+
+#folder = "giffiles"
+#filelist = [f for f in os.listdir(folder)]
+#for f in filelist:
+#    os.remove(os.path.join(folder, f))
 
 for i in range(0,nt):
-    # Run through the FTCS with these BC
-    for j in range(1,n):
-        Tsoln[j] = Tsoln_pr[j] + r*(Tsoln_pr[j+1]-2*Tsoln_pr[j]+Tsoln_pr[j-1])
     
     # time in seconds to hours on a 24-hour clock will be used for radiation function
-    
     print(f"i={i}/{nt}, hr={(i*dt/3600)%24:.4f}")
-    
+       
     #Now set the top root as the new BC for Tsoln
-    Tsoln[0]=air_temp((i+1)*dt)
+    u[0]=air_temp((i+1)*dt)
     
     #Make sure the bottom BC is still 0 degrees C
-    Tsoln[-1]=273.15
+    u[-1]=273.15
+    
+    b[0]=air_temp(0.0)*r
+    b[-1]=273.15*r
+
+    # Run through the FTCS with these BC
+    u[1:-1] = np.linalg.solve(A,rhs)
+
+    b[0]=air_temp(0.0)*r
+    b[-1]=273.15*r
+
+    #update the rhs
+    rhs = B.dot(u[1:-1]) + b
+    
+    b[0]=air_temp(0.0)*r
+    b[-1]=273.15*r
+
+    #Now set the top root as the new BC for Tsoln
+    u[0]=air_temp((i+1)*dt)
+    
+    #Make sure the bottom BC is still 0 degrees C
+    u[-1]=273.15
     
     # Now add the values to their respective lists
-    air_temp_list.append(air_temp(i*dt))
+    top_ice_temp_list.append(air_temp(i*dt))
     
     # Let's make a movie!
-    if (i*dt)%60 == 0: #every 30 seconds
+    if (i*dt)%120 == 0: #every 60 seconds
         title = str(int((i*dt)//60))
         plt.close()
-        plt.plot(x,Tsoln,"k",label = f"{(i*dt/3600.0)%24:.2f} hours")
+        plt.plot(x,u,"k",label = f"{(i*dt/3600.0)%24:.2f} hours")
         plt.legend(loc=4)
         title1=f"Distribution of Temperature in Sea Ice after {t_days:.2f} days"
         plt.title(title1)
         plt.xlabel("x (m)")
         plt.ylabel("Temperature (K)")
         plt.tight_layout()
-        plt.savefig("figures/giffiles/plot"+title+".png")
+        plt.savefig("giffiles/plot"+title+".png")
         plt.close()
     
-    #update Tsoln before next time step
-    Tsoln_pr = Tsoln
 
 #%% Movie Time
 
-png_dir = 'figures/giffiles/'
+png_dir = 'giffiles/'
 images = []
 for file_name in os.listdir(png_dir):
     if file_name.endswith('.png'):
         file_path = os.path.join(png_dir, file_name)
         images.append(imageio.imread(file_path))
-imageio.mimsave('figures/icemovie.gif',images)
+imageio.mimsave('icemovie.gif',images)
 
 #%% Plotting Main Results
 locs, labels = plt.yticks()
     
 # Plot the figure after nt iterations with initial profile
-plt.plot(x,init,"g",label="Initial Profile")
-plt.plot(x,Tsoln,"k",label=f"After {t_days:.2f} days")
+plt.plot(x,u,"g",label="Initial Profile")
+plt.plot(x,u,"k",label=f"After {t_days:.2f} days")
 title1=f"Distribution of Temperature in Sea Ice after {t_days:.2f} days"
 plt.title(title1)
 plt.xlabel("x (m)")
@@ -141,7 +165,7 @@ plt.xlabel("x (m)")
 plt.ylabel("Temperature (K)")
 plt.legend()
 plt.tight_layout()
-plt.savefig("figures/ice_temp_distribution.png")
+plt.savefig("ice_temp_distribution.png")
 plt.close()
 
 #%% Some more output
@@ -161,6 +185,16 @@ plt.xlabel("Time (hr)")
 plt.ylabel('Temperature (K)')
 plt.legend()
 plt.tight_layout()
-plt.savefig("figures/surface_temp_temporal.png")
+plt.savefig("surface_temp_temporal.png")
 plt.close()
 
+#finally, clear the folder with the images to make room for new ones
+
+import shutil
+shutil.rmtree('D:\Coursework\APC 523 Numerical Algorithms\HeatEquation\crank-nicolson-solver\giffiles',ignore_errors=True)
+
+
+folder = "giffiles"
+filelist = [f for f in os.listdir(folder)]
+for f in filelist:
+    os.remove(os.path.join(folder, f))
