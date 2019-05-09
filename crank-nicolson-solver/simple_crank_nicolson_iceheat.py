@@ -96,27 +96,16 @@ for i in range(0,nt):
     
     # time in seconds to hours on a 24-hour clock will be used for radiation function
     print(f"i={i}/{nt}, hr={(i*dt/3600)%24:.4f}")
-       
-#    #Now set the top root as the new BC for Tsoln
-#    u[0]=air_temp((i+1)*dt)
-#    
-#    #Make sure the bottom BC is still 0 degrees C
-#    u[-1]=273.15
-#    
-#    b[0]=air_temp(0.0)*r
-#    b[-1]=273.15*r
 
-    # Run through the FTCS with these BC
+    # Run through the CN scheme for interior points
     u[1:-1] = np.linalg.solve(A,rhs)
-
-    b[0]=air_temp(0.0)*r
-    b[-1]=273.15*r
+    
+    #update b vector
+    b[0] = r*u[0]
+    b[-1] = r*u[-1]
 
     #update the rhs
     rhs = B.dot(u[1:-1]) + b
-    
-    b[0]=air_temp(0.0)*r
-    b[-1]=273.15*r
 
     #Now set the top root as the new BC for Tsoln
     u[0]=air_temp((i+1)*dt)
