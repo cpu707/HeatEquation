@@ -98,7 +98,7 @@ os.chmod('D:\Coursework\APC 523 Numerical Algorithms\HeatEquation\crank-nicolson
 
 for i in range(0,nt):
     
-    # time in seconds to hours on a 24-hour clock will be used for radiation function
+    # time in seconds to hours on a 24-hour clock will be used for air temp function
     print(f"i={i}/{nt}, hr={(i*dt/3600)%24:.4f}")
 
     # Run through the CN scheme for interior points
@@ -112,7 +112,7 @@ for i in range(0,nt):
     
     #update rhs with new interior nodes
     rhs = B.dot(u[1:-1])
-        
+    
     # Now add the surface temp to its list
     top_ice_temp_list.append(u[0])
     
