@@ -53,6 +53,7 @@ init = np.full(n+1, 272.65)
 # Now we have a initial linear distribution of temperature in the sea ice
 plt.plot(x,Tsoln_pr,"g-",label="Initial Profile")
 plt.title("Initial Distribution of Temperature in Sea Ice")
+plt.savefig("init_profile.png")
 plt.close()
 
 # Time parameters
@@ -73,13 +74,18 @@ air_temp_list = []
 
 #first, clear the folder with the images to make room for new ones
 folder = "giffiles"
+os.chmod(folder, 0o777)
 filelist = [f for f in os.listdir(folder)]
 for f in filelist:
     os.remove(os.path.join(folder, f))
+os.remove("icemovie.gif")
+
+import shutil
+shutil.rmtree('D:\Coursework\APC 523 Numerical Algorithms\HeatEquation\crank-nicolson-solver\giffiles',ignore_errors=True)
 
 for i in range(0,nt):
     
-    print(f"i={i}/{nt}, %={(i/nt)*100:.1f}, hr={(i*dt/3600)%24:.4f}")
+    print(f"i={i}/{nt}, %={(i/nt)*100:.3f}, hr={(i*dt/3600)%24:.4f}")
     
     # Run through the FTCS with these BC
     Tsoln[1:n] = Tsoln[1:n]+r*(Tsoln_pr[2:n+1]-2*Tsoln_pr[1:n]+Tsoln_pr[0:n-1])
@@ -91,7 +97,7 @@ for i in range(0,nt):
     
 
     #Now set the top root as the new BC for Tsoln
-    Tsoln[0]=air_temp((i+1)*dt)
+    Tsoln[0]=air_temp(i*dt)
     
     #Make sure the bottom BC is still 0 degrees C
     Tsoln[-1]=273.15
@@ -117,7 +123,7 @@ for i in range(0,nt):
     #update Tsoln before next time step
     Tsoln_pr = Tsoln
 
-0#%% Movie Time
+#%% Movie Time
 
 png_dir = 'giffiles/'
 images = []
@@ -140,7 +146,7 @@ plt.xlabel("x (m)")
 plt.ylabel("Temperature (K)")
 plt.legend()
 plt.tight_layout()
-plt.savefig("/ice_temp_distribution.png")
+plt.savefig("ice_temp_distribution.png")
 plt.close()
 
 #%% Some more output
@@ -165,9 +171,12 @@ plt.close()
 
 
 
+
 #%% Remove gif files from the folder
 
 folder = "giffiles"
+os.chmod(folder, 0o777)
 filelist = [f for f in os.listdir(folder)]
 for f in filelist:
     os.remove(os.path.join(folder, f))
+os.remove("icemovie.gif")

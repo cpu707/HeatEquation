@@ -86,20 +86,16 @@ air_temp_list = []
 
 #%% Start Iteration and prepare plots
 
-#first, clear the folder with the images to make room for new ones
-os.chmod('D:\Coursework\APC 523 Numerical Algorithms\HeatEquation\crank-nicolson-solver\giffiles',stat.S_IRWXO)
-#import shutil
-#shutil.rmtree('D:\Coursework\APC 523 Numerical Algorithms\HeatEquation\crank-nicolson-solver\giffiles')
-
-#folder = "giffiles"
-#filelist = [f for f in os.listdir(folder)]
-#for f in filelist:
-#    os.remove(os.path.join(folder, f))
+folder = "giffiles"
+os.chmod(folder, 0o777)
+filelist = [f for f in os.listdir(folder)]
+for f in filelist:
+    os.remove(os.path.join(folder, f))
 
 for i in range(0,nt):
     
     # time in seconds to hours on a 24-hour clock will be used for air temp function
-    print(f"i={i}/{nt}, hr={(i*dt/3600)%24:.4f}")
+    print(f"i={i}/{nt}, %={(i/nt)*100:.3f}, hr={(i*dt/3600)%24:.4f}")
 
     # Run through the CN scheme for interior points
     u[1:-1] = sparse.linalg.spsolve(A,rhs)
@@ -180,11 +176,8 @@ plt.close()
 
 #finally, clear the folder with the images to make room for new ones
 
-import shutil
-shutil.rmtree('D:\Coursework\APC 523 Numerical Algorithms\HeatEquation\crank-nicolson-solver\giffiles',ignore_errors=True)
-
-
-#folder = "giffiles"
-#filelist = [f for f in os.listdir(folder)]
-#for f in filelist:
-#    os.remove(os.path.join(folder, f))
+folder = "giffiles"
+os.chmod(folder, 0o777)
+filelist = [f for f in os.listdir(folder)]
+for f in filelist:
+    os.remove(os.path.join(folder, f))
