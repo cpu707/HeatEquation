@@ -7,7 +7,11 @@ import matplotlib.pyplot as plt
 import imageio
 import os #shutil
 import matplotlib.animation as manimation
+import matplotlib as mpl
+mpl.rcParams.update(mpl.rcParamsDefault)
+
 from scipy import sparse
+from scipy import linalg
 import stat
 
 #%% Physical Constants in SI Units
@@ -51,10 +55,7 @@ diff_time_scale = (float(L**2))/(alpha_ice) #in seconds
 #these do not change during the iterations
 
 A = sparse.diags([-r, 1+2*r, -r], [-1, 0, 1], shape = (n-2,n-2)).toarray()
-B = sparse.diags([r, 1-2*r, r], [-1, 0, 1], shape = (n-2,n-2)).toarray()
-b = np.zeros((n-2))
-b[0]=air_temp(0.0)*r
-b[-1]=273.15*r
+B = sparse.diags([r, 1-r, r], [-1, 0, 1], shape = (n-2,n-2)).toarray()
 #plt.matshow(A)
 #plt.matshow(B)
 
@@ -65,20 +66,23 @@ u = np.full(n, 272.65)
 u[0]=air_temp(0.0)
 u[-1]=273.15
 
+init = np.full(n,272.65)
+init[0]=air_temp(0.0)
+init[-1]=273.15
 #%% Initial and boudnary conditions
 
 # Now we have a initial linear distribution of temperature in the sea ice
 plt.plot(x,u,"g-",label="Initial Profile")
 plt.title("Initial Distribution of Temperature in Sea Ice")
-#plt.close()
+plt.savefig("init_profile.png")
+plt.close()
 
 #initially solve right hand side of matrix equation
-rhs = B.dot(u[1:-1])+b
+rhs = B.dot(u[1:-1])
 
 #Create an empty list for outputs and plots
 top_ice_temp_list = []
 air_temp_list = []
-
 
 #%% Start Iteration and prepare plots
 
@@ -100,14 +104,7 @@ for i in range(0,nt):
     # Run through the CN scheme for interior points
     u[1:-1] = np.linalg.solve(A,rhs)
     
-    #update b vector
-    b[0] = r*u[0]
-    b[-1] = r*u[-1]
-
-    #update the rhs
-    rhs = B.dot(u[1:-1]) + b
-
-    #Now set the top root as the new BC for Tsoln
+    #update u vector
     u[0]=air_temp((i+1)*dt)
     
     #Make sure the bottom BC is still 0 degrees C
@@ -120,12 +117,14 @@ for i in range(0,nt):
     if (i*dt)%120 == 0: #every 60 seconds
         title = str(int((i*dt)//60))
         plt.close()
+        plt.plot(x,u,"g-",label="Initial Profile")
         plt.plot(x,u,"k",label = f"{(i*dt/3600.0)%24:.2f} hours")
         plt.legend(loc=4)
         title1=f"Distribution of Temperature in Sea Ice after {t_days:.2f} days"
         plt.title(title1)
         plt.xlabel("x (m)")
         plt.ylabel("Temperature (K)")
+        plt.legend()
         plt.tight_layout()
         plt.savefig("giffiles/plot"+title+".png")
         plt.close()

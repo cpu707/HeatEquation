@@ -11,6 +11,9 @@ import imageio
 import os #shutil
 import matplotlib.animation as manimation
 
+import matplotlib as mpl
+mpl.rcParams.update(mpl.rcParamsDefault)
+
 #%% Constants in SI Units
 alpha = 0.3; # albedo
 eps_ice = 0.96; # emissivity
@@ -54,7 +57,7 @@ plt.close()
 
 # Time parameters
 dt = 0.5; # time between iterations, in seconds
-nt = 15000; # amount of iterations
+nt = 5000; # amount of iterations
 t_days = (dt*nt)/86400.0
 
 # Calculate r, want ~0.25, must be < 0.5 (for explicit method)
@@ -75,18 +78,20 @@ for f in filelist:
     os.remove(os.path.join(folder, f))
 
 for i in range(0,nt):
-    # Run through the FTCS with these BC
-    for j in range(1,n):
-        Tsoln[j] = Tsoln_pr[j] + r*(Tsoln_pr[j+1]-2*Tsoln_pr[j]+Tsoln_pr[j-1])
-    
-    # time in seconds to hours on a 24-hour clock will be used for radiation function
-    
     
     print(f"i={i}/{nt}, %={(i/nt)*100:.1f}, hr={(i*dt/3600)%24:.4f}")
     
+    # Run through the FTCS with these BC
+    Tsoln[1:n] = Tsoln[1:n]+r*(Tsoln_pr[2:n+1]-2*Tsoln_pr[1:n]+Tsoln_pr[0:n-1])
+    
+#    for j in range(1,n):
+#        Tsoln[j] = Tsoln_pr[j] + r*(Tsoln_pr[j+1]-2*Tsoln_pr[j]+Tsoln_pr[j-1])
+    
+    # time in seconds to hours on a 24-hour clock will be used for radiation function
+    
+
     #Now set the top root as the new BC for Tsoln
     Tsoln[0]=air_temp((i+1)*dt)
-    
     
     #Make sure the bottom BC is still 0 degrees C
     Tsoln[-1]=273.15
@@ -157,6 +162,10 @@ plt.legend()
 plt.tight_layout()
 plt.savefig("surface_temp_temporal.png")
 plt.close()
+
+
+
+#%% Remove gif files from the folder
 
 folder = "giffiles"
 filelist = [f for f in os.listdir(folder)]
