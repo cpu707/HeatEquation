@@ -59,13 +59,13 @@ B = sparse.diags([r, 1-r, r], [-1, 0, 1], shape = (n-2,n-2)).toarray()
 #plt.matshow(A)
 #plt.matshow(B)
 
-#inital profile
-#base this off of x, defined above
+#some inital profile
 u = np.full(n, 272.65)
 #set initial BC as well
 u[0]=air_temp(0.0)
 u[-1]=273.15
 
+#this here is only defined to plot initial profile, not used anywhere else
 init = np.full(n,272.65)
 init[0]=air_temp(0.0)
 init[-1]=273.15
@@ -103,21 +103,24 @@ for i in range(0,nt):
 
     # Run through the CN scheme for interior points
     u[1:-1] = sparse.linalg.spsolve(A,rhs)
-    
-    #update u vector
-    u[0]=air_temp((i+1)*dt)
+
+    #update u top boundary
+    u[0]=air_temp(i*dt)
     
     #Make sure the bottom BC is still 0 degrees C
     u[-1]=273.15
     
-    # Now add the values to their respective lists
-    top_ice_temp_list.append(air_temp(i*dt))
+    #update rhs with new interior nodes
+    rhs = B.dot(u[1:-1])
+        
+    # Now add the surface temp to its list
+    top_ice_temp_list.append(u[0])
     
     # Let's make a movie!
     if (i*dt)%120 == 0: #every 60 seconds
         title = str(int((i*dt)//60))
         plt.close()
-        plt.plot(x,u,"g-",label="Initial Profile")
+        plt.plot(x,init,"g-",label="Initial Profile")
         plt.plot(x,u,"k",label = f"{(i*dt/3600.0)%24:.2f} hours")
         plt.legend(loc=4)
         title1=f"Distribution of Temperature in Sea Ice after {t_days:.2f} days"
@@ -149,7 +152,6 @@ plt.plot(x,u,"k",label=f"After {t_days:.2f} days")
 title1=f"Distribution of Temperature in Sea Ice after {t_days:.2f} days"
 plt.title(title1)
 plt.xlabel("x (m)")
-#plt.yticks(locs, map(lambda x: "%.1f" % x, locs*1e0))
 plt.ylabel("Temperature (K)")
 plt.legend()
 plt.tight_layout()
