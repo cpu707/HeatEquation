@@ -102,7 +102,7 @@ for i in range(0,nt):
     print(f"i={i}/{nt}, hr={(i*dt/3600)%24:.4f}")
 
     # Run through the CN scheme for interior points
-    u[1:-1] = np.linalg.solve(A,rhs)
+    u[1:-1] = sparse.linalg.spsolve(A,rhs)
     
     #update u vector
     u[0]=air_temp((i+1)*dt)
@@ -182,7 +182,7 @@ import shutil
 shutil.rmtree('D:\Coursework\APC 523 Numerical Algorithms\HeatEquation\crank-nicolson-solver\giffiles',ignore_errors=True)
 
 
-folder = "giffiles"
-filelist = [f for f in os.listdir(folder)]
-for f in filelist:
-    os.remove(os.path.join(folder, f))
+#folder = "giffiles"
+#filelist = [f for f in os.listdir(folder)]
+#for f in filelist:
+#    os.remove(os.path.join(folder, f))
