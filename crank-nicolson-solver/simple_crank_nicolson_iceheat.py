@@ -11,14 +11,14 @@ import matplotlib as mpl
 mpl.rcParams.update(mpl.rcParamsDefault)
 
 from scipy import sparse
-from scipy import linalg
+from scipy.sparse import linalg
 import stat
 
 #%% Physical Constants in SI Units
 alpha = 0.3; # albedo
 eps_ice = 0.96; # emissivity
 rho_i = 916.7; # density of ice, kg/m^3
-T_w = 272.15; # temperature of bulk water, K
+T_w = 273.15; # temperature of bulk water, K
 c_pi = 2027; # specific heat of ice, J/(kgK)
 kappa_ice = 2.25; # thermal conductivity of ice, W/(mK)
 alpha_ice = (kappa_ice)/(c_pi*rho_i); # thermal diffusivity of ice, m^2/s
@@ -34,9 +34,9 @@ def air_temp(t): #t is in seconds, so dt*i would be evaluated
 
 # Space mesh
 L = 2.0; # depth of sea ice
-n = 401; # number of nodes
-x = np.linspace(0.0,L,n); #space mesh
-dx = L/(n-1); # length between nodes
+n = 400; # number of spaces
+x = np.linspace(0.0,L,n+1); #space mesh
+dx = L/n; # length between nodes
 
 # Time parameters
 dt = 0.5; # time between iterations, in seconds
@@ -54,21 +54,42 @@ diff_time_scale = (float(L**2))/(alpha_ice) #in seconds
 #Create the matrices in the C_N scheme
 #these do not change during the iterations
 
-A = sparse.diags([-r, 1+2*r, -r], [-1, 0, 1], shape = (n-2,n-2)).toarray()
-B = sparse.diags([r, 1-r, r], [-1, 0, 1], shape = (n-2,n-2)).toarray()
-#plt.matshow(A)
-#plt.matshow(B)
+A = sparse.diags([-r, 1+2*r, -r], [-1, 0, 1], shape = (n+1,n+1),format='lil')
+B = sparse.diags([r, 1-2*r, r], [-1, 0, 1], shape = (n+1,n+1),format='lil')
+
+#now we pad the matrices with one in the TL and BR corners
+A[0,[0,1]] = [1.0,0.0]
+A[n,[n-1,n]] = [0.0,1.0]
+B[0,[0,1]] = [1.0,0.0]
+B[n,[n-1,n]] = [0.0,1.0]
+
+#now convert todifferent format
+
+A = A.tocsc()
+B = B.tocsc()
 
 #some inital profile
-u = np.full(n, 272.65)
+
+
+
+#use lil for matrix
+
+def T_init(x):
+    return -14.0*np.sin(np.pi*x/L) + ((air_temp(0.0)*(L-x))+(T_w*x))/L
+
+u = T_init(x)
 #set initial BC as well
 u[0]=air_temp(0.0)
 u[-1]=273.15
 
+
+
+#print(np.allclose(B0.dot(u[1:-1])+r*u[1:-1], B.dot(u[1:-1])))
+
 #this here is only defined to plot initial profile, not used anywhere else
-init = np.full(n,272.65)
-init[0]=air_temp(0.0)
-init[-1]=273.15
+#init2 = T_init(x)
+#init[0]=air_temp(0.0)
+#init[-1]=273.15
 #%% Initial and boudnary conditions
 
 # Now we have a initial linear distribution of temperature in the sea ice
@@ -78,7 +99,7 @@ plt.savefig("init_profile.png")
 plt.close()
 
 #initially solve right hand side of matrix equation
-rhs = B.dot(u[1:-1])
+rhs = B.dot(u)
 
 #Create an empty list for outputs and plots
 top_ice_temp_list = []
@@ -92,13 +113,15 @@ filelist = [f for f in os.listdir(folder)]
 for f in filelist:
     os.remove(os.path.join(folder, f))
 
+soln_array = u
+
 for i in range(0,nt):
     
     # time in seconds to hours on a 24-hour clock will be used for air temp function
     print(f"i={i}/{nt}, %={(i/nt)*100:.3f}, hr={(i*dt/3600)%24:.4f}")
 
     # Run through the CN scheme for interior points
-    u[1:-1] = sparse.linalg.spsolve(A,rhs)
+    u = sparse.linalg.spsolve(A,rhs)
 
     #update u top boundary
     u[0]=air_temp(i*dt)
@@ -107,37 +130,44 @@ for i in range(0,nt):
     u[-1]=273.15
     
     #update rhs with new interior nodes
-    rhs = B.dot(u[1:-1])
+    rhs = B.dot(u)
     
     # Now add the surface temp to its list
     top_ice_temp_list.append(u[0])
     
+    #append to solution array    
+    np.concatenate((soln_array,u),axis=0)
+    
+    
+    np.savetxt(f'cn_solution.out', u, delimiter=',',fmt='%.4f')
+    
+    
     # Let's make a movie!
-    if (i*dt)%120 == 0: #every 60 seconds
-        title = str(int((i*dt)//60))
-        plt.close()
-        plt.plot(x,init,"g-",label="Initial Profile")
-        plt.plot(x,u,"k",label = f"{(i*dt/3600.0)%24:.2f} hours")
-        plt.legend(loc=4)
-        title1=f"Distribution of Temperature in Sea Ice after {t_days:.2f} days"
-        plt.title(title1)
-        plt.xlabel("x (m)")
-        plt.ylabel("Temperature (K)")
-        plt.legend()
-        plt.tight_layout()
-        plt.savefig("giffiles/plot"+title+".png")
-        plt.close()
+#    if (i*dt)%120 == 0: #every 60 seconds
+#        title = str(int((i*dt)//60))
+#        plt.close()
+#        plt.plot(x,init,"g-",label="Initial Profile")
+#        plt.plot(x,u,"k",label = f"{(i*dt/3600.0)%24:.2f} hours")
+#        plt.legend(loc=4)
+#        title1=f"Distribution of Temperature in Sea Ice after {t_days:.2f} days"
+#        plt.title(title1)
+#        plt.xlabel("x (m)")
+#        plt.ylabel("Temperature (K)")
+#        plt.legend()
+#        plt.tight_layout()
+#        plt.savefig("giffiles/plot"+title+".png")
+#        plt.close()
     
 
 #%% Movie Time
 
-png_dir = 'giffiles/'
-images = []
-for file_name in os.listdir(png_dir):
-    if file_name.endswith('.png'):
-        file_path = os.path.join(png_dir, file_name)
-        images.append(imageio.imread(file_path))
-imageio.mimsave('icemovie.gif',images)
+#png_dir = 'giffiles/'
+#images = []
+#for file_name in os.listdir(png_dir):
+#    if file_name.endswith('.png'):
+#        file_path = os.path.join(png_dir, file_name)
+#        images.append(imageio.imread(file_path))
+#imageio.mimsave('icemovie.gif',images)
 
 #%% Plotting Main Results
 locs, labels = plt.yticks()
@@ -176,8 +206,8 @@ plt.close()
 
 #finally, clear the folder with the images to make room for new ones
 
-folder = "giffiles"
-os.chmod(folder, 0o777)
-filelist = [f for f in os.listdir(folder)]
-for f in filelist:
-    os.remove(os.path.join(folder, f))
+#folder = "giffiles"
+#os.chmod(folder, 0o777)
+#filelist = [f for f in os.listdir(folder)]
+#for f in filelist:
+#    os.remove(os.path.join(folder, f))
