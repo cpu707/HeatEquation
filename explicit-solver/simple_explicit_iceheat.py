@@ -78,7 +78,6 @@ os.chmod(folder, 0o777)
 filelist = [f for f in os.listdir(folder)]
 for f in filelist:
     os.remove(os.path.join(folder, f))
-os.remove("icemovie.gif")
 
 import shutil
 shutil.rmtree('D:\Coursework\APC 523 Numerical Algorithms\HeatEquation\crank-nicolson-solver\giffiles',ignore_errors=True)
@@ -142,7 +141,6 @@ plt.plot(x,Tsoln,"k",label=f"After {t_days:.2f} days")
 title1=f"Distribution of Temperature in Sea Ice after {t_days:.2f} days"
 plt.title(title1)
 plt.xlabel("x (m)")
-#plt.yticks(locs, map(lambda x: "%.1f" % x, locs*1e0))
 plt.ylabel("Temperature (K)")
 plt.legend()
 plt.tight_layout()
@@ -169,9 +167,6 @@ plt.tight_layout()
 plt.savefig("surface_temp_temporal.png")
 plt.close()
 
-
-
-
 #%% Remove gif files from the folder
 
 folder = "giffiles"
@@ -179,4 +174,3 @@ os.chmod(folder, 0o777)
 filelist = [f for f in os.listdir(folder)]
 for f in filelist:
     os.remove(os.path.join(folder, f))
-os.remove("icemovie.gif")
