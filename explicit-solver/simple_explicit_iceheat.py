@@ -41,14 +41,13 @@ x = np.linspace(0.0,L,n+1);
 #ND Parameters
 diff_time_scale = (float(L**2))/(alpha_ice) #in seconds
 
-# Create two boundary conditions (top and bottom of ice)
-T_it = 272.65
-T_ib = 273.15
-
-#Create Solution Vector and initial profile
+#Create Solution Vector (Tsoln) and initial profile (Tsoln_pr)
 Tsoln = np.zeros(n+1)
 Tsoln_pr = np.full(n+1, 272.65)
-init = np.full(n+1, 272.65)
+
+#Set the initial boundary conditions
+Tsoln_pr[0] = air_temp(0.0)
+Tsoln_pr[-1] = 273.15
 
 # Now we have a initial linear distribution of temperature in the sea ice
 plt.plot(x,Tsoln_pr,"g-",label="Initial Profile")
@@ -84,6 +83,7 @@ shutil.rmtree('D:\Coursework\APC 523 Numerical Algorithms\HeatEquation\crank-nic
 
 for i in range(0,nt):
     
+    # time in seconds to hours on a 24-hour clock will be used for air temp function
     print(f"i={i}/{nt}, %={(i/nt)*100:.3f}, hr={(i*dt/3600)%24:.4f}")
     
     # Run through the FTCS with these BC
@@ -92,9 +92,6 @@ for i in range(0,nt):
 #    for j in range(1,n):
 #        Tsoln[j] = Tsoln_pr[j] + r*(Tsoln_pr[j+1]-2*Tsoln_pr[j]+Tsoln_pr[j-1])
     
-    # time in seconds to hours on a 24-hour clock will be used for radiation function
-    
-
     #Now set the top root as the new BC for Tsoln
     Tsoln[0]=air_temp(i*dt)
     
@@ -136,7 +133,6 @@ imageio.mimsave('icemovie.gif',images)
 locs, labels = plt.yticks()
     
 # Plot the figure after nt iterations with initial profile
-plt.plot(x,init,"g",label="Initial Profile")
 plt.plot(x,Tsoln,"k",label=f"After {t_days:.2f} days")
 title1=f"Distribution of Temperature in Sea Ice after {t_days:.2f} days"
 plt.title(title1)
