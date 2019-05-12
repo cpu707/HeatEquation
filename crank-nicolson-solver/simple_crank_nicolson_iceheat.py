@@ -1,18 +1,16 @@
 #%%Solving the Heat Equation with changing boundary conditions using the 
 # Crank-Nicolson Method to Simulating a block of ice floating in seawater
 
-#%%import needed libbraries
+#%%import needed libraries
 import numpy as np
 import matplotlib.pyplot as plt
-import imageio
-import os #shutil
-import matplotlib.animation as manimation
+
 import matplotlib as mpl
 mpl.rcParams.update(mpl.rcParamsDefault)
 
 from scipy import sparse
 from scipy.sparse import linalg
-import stat
+
 
 #%% Physical Constants in SI Units
 alpha = 0.3; # albedo
@@ -69,31 +67,20 @@ A = A.tocsc()
 B = B.tocsc()
 
 #some inital profile
-
-
-
-#use lil for matrix
-
 def T_init(x):
     return -14.0*np.sin(np.pi*x/L) + ((air_temp(0.0)*(L-x))+(T_w*x))/L
 
 u = T_init(x)
 #set initial BC as well
+u.shape = (len(u),1)
 u[0]=air_temp(0.0)
 u[-1]=273.15
 
 
-
-#print(np.allclose(B0.dot(u[1:-1])+r*u[1:-1], B.dot(u[1:-1])))
-
-#this here is only defined to plot initial profile, not used anywhere else
-#init2 = T_init(x)
-#init[0]=air_temp(0.0)
-#init[-1]=273.15
 #%% Initial and boudnary conditions
 
 # Now we have a initial linear distribution of temperature in the sea ice
-plt.plot(x,u,"g-",label="Initial Profile")
+plt.plot(x,u.transpose()[0],"g-",label="Initial Profile")
 plt.title("Initial Distribution of Temperature in Sea Ice")
 plt.savefig("init_profile.png")
 plt.close()
@@ -105,15 +92,10 @@ rhs = B.dot(u)
 top_ice_temp_list = []
 air_temp_list = []
 
+#set initial conditions to the matrix as the first row
+u_soln = u
+
 #%% Start Iteration and prepare plots
-
-folder = "giffiles"
-os.chmod(folder, 0o777)
-filelist = [f for f in os.listdir(folder)]
-for f in filelist:
-    os.remove(os.path.join(folder, f))
-
-soln_array = u
 
 for i in range(0,nt):
     
@@ -122,6 +104,9 @@ for i in range(0,nt):
 
     # Run through the CN scheme for interior points
     u = sparse.linalg.spsolve(A,rhs)
+    
+    #force to be column vector
+    u.shape = (len(u),1)
 
     #update u top boundary
     u[0]=air_temp(i*dt)
@@ -135,39 +120,13 @@ for i in range(0,nt):
     # Now add the surface temp to its list
     top_ice_temp_list.append(u[0])
     
-    #append to solution array    
-    np.concatenate((soln_array,u),axis=0)
-    
-    
-    np.savetxt(f'cn_solution.out', u, delimiter=',',fmt='%.4f')
-    
-    
-    # Let's make a movie!
-#    if (i*dt)%120 == 0: #every 60 seconds
-#        title = str(int((i*dt)//60))
-#        plt.close()
-#        plt.plot(x,init,"g-",label="Initial Profile")
-#        plt.plot(x,u,"k",label = f"{(i*dt/3600.0)%24:.2f} hours")
-#        plt.legend(loc=4)
-#        title1=f"Distribution of Temperature in Sea Ice after {t_days:.2f} days"
-#        plt.title(title1)
-#        plt.xlabel("x (m)")
-#        plt.ylabel("Temperature (K)")
-#        plt.legend()
-#        plt.tight_layout()
-#        plt.savefig("giffiles/plot"+title+".png")
-#        plt.close()
+    #append this array to solution file
+    if (i*dt)%120 == 0: #every 60 seconds
+        u_soln = np.append(u_soln, u, axis=1)
     
 
-#%% Movie Time
-
-#png_dir = 'giffiles/'
-#images = []
-#for file_name in os.listdir(png_dir):
-#    if file_name.endswith('.png'):
-#        file_path = os.path.join(png_dir, file_name)
-#        images.append(imageio.imread(file_path))
-#imageio.mimsave('icemovie.gif',images)
+#%% write the solution matrix to a file
+np.savetxt(f"cn_output_{n+1}_nodes.txt",u_soln.transpose(), fmt = '%.10f',delimiter=' ')
 
 #%% Plotting Main Results
 locs, labels = plt.yticks()
@@ -203,11 +162,3 @@ plt.legend()
 plt.tight_layout()
 plt.savefig("surface_temp_temporal.png")
 plt.close()
-
-#finally, clear the folder with the images to make room for new ones
-
-#folder = "giffiles"
-#os.chmod(folder, 0o777)
-#filelist = [f for f in os.listdir(folder)]
-#for f in filelist:
-#    os.remove(os.path.join(folder, f))

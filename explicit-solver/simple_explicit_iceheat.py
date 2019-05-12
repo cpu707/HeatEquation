@@ -7,9 +7,6 @@
 #import needed libbraries
 import numpy as np
 import matplotlib.pyplot as plt
-import imageio
-import os #shutil
-import matplotlib.animation as manimation
 
 import matplotlib as mpl
 mpl.rcParams.update(mpl.rcParamsDefault)
@@ -71,29 +68,19 @@ air_temp_list = []
 
 #%% Start Iteration and prepare plots
 
-#first, clear the folder with the images to make room for new ones
-folder = "giffiles"
-os.chmod(folder, 0o777)
-filelist = [f for f in os.listdir(folder)]
-for f in filelist:
-    os.remove(os.path.join(folder, f))
-
-import shutil
-shutil.rmtree('D:\Coursework\APC 523 Numerical Algorithms\HeatEquation\crank-nicolson-solver\giffiles',ignore_errors=True)
-
 for i in range(0,nt):
     
     # time in seconds to hours on a 24-hour clock will be used for air temp function
     print(f"i={i}/{nt}, %={(i/nt)*100:.3f}, hr={(i*dt/3600)%24:.4f}")
     
     # Run through the FTCS with these BC
-    Tsoln[1:n] = Tsoln[1:n]+r*(Tsoln_pr[2:n+1]-2*Tsoln_pr[1:n]+Tsoln_pr[0:n-1])
+#    Tsoln[1:n] = Tsoln[1:n]+r*(Tsoln_pr[2:n+1]-2*Tsoln_pr[1:n]+Tsoln_pr[0:n-1])
     
-#    for j in range(1,n):
-#        Tsoln[j] = Tsoln_pr[j] + r*(Tsoln_pr[j+1]-2*Tsoln_pr[j]+Tsoln_pr[j-1])
+    for j in range(1,n):
+        Tsoln[j] = Tsoln_pr[j] + r*(Tsoln_pr[j+1]-2*Tsoln_pr[j]+Tsoln_pr[j-1])
     
     #Now set the top root as the new BC for Tsoln
-    Tsoln[0]=air_temp(i*dt)
+#    Tsoln[0]=air_temp(i*dt)
     
     #Make sure the bottom BC is still 0 degrees C
     Tsoln[-1]=273.15
@@ -101,33 +88,10 @@ for i in range(0,nt):
     # Now add the values to their respective lists
     air_temp_list.append(air_temp(i*dt))
     top_ice_temp_list.append(Tsoln[0])
-        
-    # Let's make a movie!
-    if (i*dt)%60 == 0: #every 30 seconds
-        title = str(int((i*dt)//60))
-        plt.close()
-        plt.plot(x,Tsoln,"k",label = f"{(i*dt/3600.0)%24:.2f} hours")
-        plt.legend(loc=4)
-        title1=f"Distribution of Temperature in Sea Ice after {t_days:.2f} days"
-        plt.title(title1)
-        plt.xlabel("x (m)")
-        plt.ylabel("Temperature (K)")
-        plt.tight_layout()
-        plt.savefig("giffiles/plot"+title+".png")
-        plt.close()
-    
+
     #update Tsoln before next time step
     Tsoln_pr = Tsoln
 
-#%% Movie Time
-
-png_dir = 'giffiles/'
-images = []
-for file_name in os.listdir(png_dir):
-    if file_name.endswith('.png'):
-        file_path = os.path.join(png_dir, file_name)
-        images.append(imageio.imread(file_path))
-imageio.mimsave('icemovie.gif',images)
 
 #%% Plotting Main Results
 locs, labels = plt.yticks()
@@ -162,11 +126,3 @@ plt.legend()
 plt.tight_layout()
 plt.savefig("surface_temp_temporal.png")
 plt.close()
-
-#%% Remove gif files from the folder
-
-folder = "giffiles"
-os.chmod(folder, 0o777)
-filelist = [f for f in os.listdir(folder)]
-for f in filelist:
-    os.remove(os.path.join(folder, f))
