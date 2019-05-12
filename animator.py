@@ -17,13 +17,13 @@ fig = plt.figure()
 l, = plt.plot([], [], 'k-o')
 
 solverlist = ["explicit", "implicit", "crank-nicolson"]
-
-filename = f"{solverlist[2]}-solver/cn_output_400_nodes.txt"
+solver_method = solverlist[0]
+filename = f"{solver_method}-solver/cn_output_400_nodes.txt"
 loaded_matrix = np.loadtxt(filename, dtype='f', delimiter=' ')
 
 x = np.linspace(0.0, 2.0, len(loaded_matrix[1]))
 
-with writer.saving(fig, f"{solverlist[2]}_{len(loaded_matrix[1])}_node_solution.mp4", 100):    
+with writer.saving(fig, f"{solver_method}_{len(loaded_matrix[1])}_node_solution.mp4", 100):    
     for i in range(len(loaded_matrix)):
         y = loaded_matrix[i]
         plt.plot(x,y)

@@ -74,16 +74,13 @@ for i in range(0,nt):
     print(f"i={i}/{nt}, %={(i/nt)*100:.3f}, hr={(i*dt/3600)%24:.4f}")
     
     # Run through the FTCS with these BC
-#    Tsoln[1:n] = Tsoln[1:n]+r*(Tsoln_pr[2:n+1]-2*Tsoln_pr[1:n]+Tsoln_pr[0:n-1])
-    
+#    Tsoln[1:n] = Tsoln[1:n]+r*(Tsoln_pr[2:n+1]-2*Tsoln_pr[1:n]+Tsoln_pr[0:n-1])   
     for j in range(1,n):
         Tsoln[j] = Tsoln_pr[j] + r*(Tsoln_pr[j+1]-2*Tsoln_pr[j]+Tsoln_pr[j-1])
     
     #Now set the top root as the new BC for Tsoln
-#    Tsoln[0]=air_temp(i*dt)
-    
-    #Make sure the bottom BC is still 0 degrees C
-    Tsoln[-1]=273.15
+    #comment this out if you want static BC
+    Tsoln[0]=air_temp(i*dt)
     
     # Now add the values to their respective lists
     air_temp_list.append(air_temp(i*dt))
