@@ -16,10 +16,12 @@ writer = FFMpegWriter(fps=15, metadata=metadata)
 fig = plt.figure()
 l, = plt.plot([], [], 'k-o')
 
-solverlist = ["explicit", "implicit", "crank-nicolson"]
-solver_method = solverlist[0]
-filename = f"{solver_method}-solver/cn_output_400_nodes.txt"
-loaded_matrix = np.loadtxt(filename, dtype='f', delimiter=' ')
+n = 400
+
+solverlist = ["ex", "im", "cn"]
+solver_method = solverlist[1]
+loaded_matrix = np.loadtxt(f'{solver_method}-solver/{solver_method}_output_' \
+                           + f'{n+1}_nodes.txt', dtype='f', delimiter=' ')
 
 x = np.linspace(0.0, 2.0, len(loaded_matrix[1]))
 

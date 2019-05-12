@@ -6,7 +6,6 @@ import numpy as np
 import matplotlib.pyplot as plt
 import imageio
 import os #shutil
-import matplotlib.animation as manimation
 from scipy import sparse
 
 #%% Physical Constants in SI Units
@@ -49,106 +48,68 @@ diff_time_scale = (float(L**2))/(alpha_ice) #in seconds
 #Create the matrices in the C_N scheme
 #these do not change during the iterations
 
-A = sparse.diags([-r, 1+2*r, -r], [-1, 0, 1], shape = (n-1,n-1)).toarray()
+A = sparse.diags([-r, 1+2*r, -r], [-1, 0, 1], shape = (n+1,n+1), format='lil')
 
-#plt.matshow(A)
-#plt.matshow(B)
+#now we pad the matrices with one in the TL and BR corners
+A[0,[0,1]] = [1.0,0.0]
+A[1,0] = -r
+A[n,[n-1,n]] = [0.0,1.0]
+A[n-1,n] = -r
 
+A = A.tocsc()
 
+#some inital profile
+def T_init(x):
+    return -14.0*np.sin(np.pi*x/L) + ((air_temp(0.0)*(L-x))+(T_w*x))/L
+u = T_init(x)
+#set initial BC as well
+u.shape = (len(u),1)
+u[0]=air_temp(0.0)
+u[-1]=273.15
 
-#inital profile
-#base this off of x, defined above
-init = np.full(n+1, 272.65)
-
-#%% Initial and boudnary conditions
-
-# Now we have a initial linear distribution of temperature in the sea ice
+# Now we have a initial distribution of temperature in the sea ice
 #plt.plot(x,Tsoln_pr,"g-",label="Initial Profile")
 #plt.title("Initial Distribution of Temperature in Sea Ice")
 #plt.close()
-
-
 
 #Create an empty list for outputs and plots
 top_ice_temp_list = []
 air_temp_list = []
 
+#set initial conditions to the matrix as the first row
+u_soln = u
 
 #%% Start Iteration and prepare plots
 
-#first, clear the folder with the images to make room for new ones
-folder = "figures/giffiles"
-filelist = [f for f in os.listdir(folder)]
-for f in filelist:
-    os.remove(os.path.join(folder, f))
-
-Tsoln = np.full(n+1, 272.65)
-
-
 for i in range(0,nt):
-    # Run through the FTCS with these BC
-    
-    #Now set the top root as the new BC for Tsoln
-    Tsoln[0]=air_temp((i+1)*dt)
-
-    #Make sure the bottom BC is still 0 degrees C
-    Tsoln[-1]=273.15
-
-    
-    Tsoln_new = Tsoln #Make a copy
-    
-    T_knowns = Tsoln_new[1:-1] #Matrix of knowns 
-    
-    T_knowns[0] = T_knowns[0] + r *  air_temp((i+1)*dt)
-    
-    T_knowns[-1] = T_knowns[-1] + r * 273.15
-    
-    Tsoln[1:-1] = np.linalg.solve(A, T_knowns)
-    
-    
-    # time in seconds to hours on a 24-hour clock will be used for radiation function
     
     print(f"i={i}/{nt}, hr={(i*dt/3600)%24:.4f}")
     
-
+    # Run through the CN scheme for interior points
+    u = sparse.linalg.spsolve(A,u)
     
+    #force to be column vector
+    u.shape = (len(u),1)
+
+    #update u top boundary
+    u[0]=air_temp(i*dt)
+  
     # Now add the values to their respective lists
     air_temp_list.append(air_temp(i*dt))
-
-    top_ice_temp_list.append(Tsoln[0])
+    top_ice_temp_list.append(u[0])
     
-    # Let's make a movie!
-    if (i*dt)%60 == 0: #every 30 seconds
-        title = str(int((i*dt)//60))
-        plt.close()
-        plt.plot(x,Tsoln,"k",label = f"{(i*dt/3600.0)%24:.2f} hours")
-        plt.legend(loc=4)
-        title1=f"Distribution of Temperature in Sea Ice after {t_days:.2f} days"
-        plt.title(title1)
-        plt.xlabel("x (m)")
-        plt.ylabel("Temperature (K)")
-        plt.tight_layout()
-        plt.savefig("figures/giffiles/plot"+title+".png")
-        plt.close()
-    
+    #append this array to solution file
+    if (i*dt)%120 == 0: #every 60 seconds
+        u_soln = np.append(u_soln, u, axis=1)
 
-
-#%% Movie Time
-
-png_dir = 'figures/giffiles/'
-images = []
-for file_name in os.listdir(png_dir):
-    if file_name.endswith('.png'):
-        file_path = os.path.join(png_dir, file_name)
-        images.append(imageio.imread(file_path))
-imageio.mimsave('figures/icemovie.gif',images)
+# write the solution matrix to a file
+np.savetxt(f"im_output_{n+1}_nodes.txt",u_soln.transpose(), fmt = '%.10f',delimiter=' ')
 
 #%% Plotting Main Results
 locs, labels = plt.yticks()
     
 # Plot the figure after nt iterations with initial profile
-plt.plot(x,init,"g",label="Initial Profile")
-plt.plot(x,Tsoln,"k",label=f"After {t_days:.2f} days")
+plt.plot(x,u,"k",label=f"After {t_days:.2f} days")
 title1=f"Distribution of Temperature in Sea Ice after {t_days:.2f} days"
 plt.title(title1)
 plt.xlabel("x (m)")
@@ -178,9 +139,3 @@ plt.legend()
 plt.tight_layout()
 plt.savefig("figures/surface_temp_temporal.png")
 plt.close()
-
-#finally, clear the folder with the images to make room for new ones
-folder = "figures/giffiles"
-filelist = [f for f in os.listdir(folder)]
-for f in filelist:
-    os.remove(os.path.join(folder, f))

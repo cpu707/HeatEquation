@@ -7,6 +7,7 @@
 #import needed libbraries
 import numpy as np
 import matplotlib.pyplot as plt
+import os
 
 import matplotlib as mpl
 mpl.rcParams.update(mpl.rcParamsDefault)
@@ -67,6 +68,11 @@ air_temp_list = []
 
 
 #%% Start Iteration and prepare plots
+
+folder = "giffiles"
+filelist = [f for f in os.listdir(folder)]
+for f in filelist:
+    os.remove(os.path.join(folder, f))
 
 for i in range(0,nt):
     

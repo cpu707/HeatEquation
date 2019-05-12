@@ -1,15 +1,16 @@
 #%%Solving the Heat Equation with changing boundary conditions using the 
 # Crank-Nicolson Method to Simulating a block of ice floating in seawater
 
-#%%import needed libraries
+#import needed libraries
 import numpy as np
 import matplotlib.pyplot as plt
+from scipy import sparse
+#from scipy.sparse import linalg, diags
 
 import matplotlib as mpl
 mpl.rcParams.update(mpl.rcParamsDefault)
 
-from scipy import sparse
-from scipy.sparse import linalg
+
 
 
 #%% Physical Constants in SI Units
@@ -41,7 +42,7 @@ dt = 0.5; # time between iterations, in seconds
 nt = 6000; # amount of iterations
 t_days = (dt*nt)/86400.0
 
-r = ((alpha_ice)*(dt))/(2*dx*dx); # stability condition
+r = ((alpha_ice)*(dt))/(dx*dx); # stability condition
 print("The value of r is ", r)
 
 #ND Parameters
@@ -57,9 +58,14 @@ B = sparse.diags([r, 1-2*r, r], [-1, 0, 1], shape = (n+1,n+1),format='lil')
 
 #now we pad the matrices with one in the TL and BR corners
 A[0,[0,1]] = [1.0,0.0]
+A[1,0] = -r
 A[n,[n-1,n]] = [0.0,1.0]
+A[n-1,n] = -r
+
 B[0,[0,1]] = [1.0,0.0]
+B[1,0] = r
 B[n,[n-1,n]] = [0.0,1.0]
+B[n-1,n] = -r
 
 #now convert todifferent format
 
@@ -111,9 +117,6 @@ for i in range(0,nt):
     #update u top boundary
     u[0]=air_temp(i*dt)
     
-    #Make sure the bottom BC is still 0 degrees C
-    u[-1]=273.15
-    
     #update rhs with new interior nodes
     rhs = B.dot(u)
     
@@ -124,8 +127,7 @@ for i in range(0,nt):
     if (i*dt)%120 == 0: #every 60 seconds
         u_soln = np.append(u_soln, u, axis=1)
     
-
-#%% write the solution matrix to a file
+# write the solution matrix to a file
 np.savetxt(f"cn_output_{n+1}_nodes.txt",u_soln.transpose(), fmt = '%.10f',delimiter=' ')
 
 #%% Plotting Main Results
@@ -143,7 +145,7 @@ plt.tight_layout()
 plt.savefig("ice_temp_distribution.png")
 plt.close()
 
-#%% Some more output
+# Some temporal output
 
 locs, labels = plt.yticks()
 
@@ -156,7 +158,6 @@ title_T_it=f"Surface Temperature Evolution after {t_days:.2f} days"
 plt.plot(time_hours,top_ice_temp_list,label="Top of Ice Surface Temperature")
 plt.title(title_T_it)
 plt.xlabel("Time (hr)")
-#plt.yticks(locs, map(lambda x: "%.3f" % x, locs*1e0))
 plt.ylabel('Temperature (K)')
 plt.legend()
 plt.tight_layout()
