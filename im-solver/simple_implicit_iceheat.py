@@ -34,10 +34,10 @@ dx = L/n; # length between nodes
 
 # Time parameters
 dt = 0.5; # time between iterations, in seconds
-nt = 5000; # amount of iterations
+nt = 6000; # amount of iterations
 t_days = (dt*nt)/86400.0
 
-r = ((alpha_ice)*(dt))/(2*dx*dx); # stability condition
+r = ((alpha_ice)*(dt))/(dx*dx); # stability condition
 print("The value of r is ", r)
 
 #ND Parameters
@@ -103,7 +103,8 @@ for i in range(0,nt):
         u_soln = np.append(u_soln, u, axis=1)
 
 # write the solution matrix to a file
-np.savetxt(f"im_output_{n+1}_nodes.txt",u_soln.transpose(), fmt = '%.10f',delimiter=' ')
+u_soln = u_soln.transpose()
+np.savetxt(f"im_output_{n+1}_nodes.txt",u_soln, fmt = '%.10f',delimiter=' ')
 
 #%% Plotting Main Results
 locs, labels = plt.yticks()

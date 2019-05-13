@@ -39,7 +39,7 @@ dx = L/n; # length between nodes
 
 # Time parameters
 dt = 0.5; # time between iterations, in seconds
-nt = 6000; # amount of iterations
+nt = 1000000; # amount of iterations
 t_days = (dt*nt)/86400.0
 
 r = ((alpha_ice)*(dt))/(dx*dx); # stability condition

@@ -37,18 +37,15 @@ x = np.linspace(0.0,L,n+1);
 
 # Time parameters
 dt = 0.5; # time between iterations, in seconds
-nt = 5000; # amount of iterations
+nt = 1000000; # amount of iterations
 t_days = (dt*nt)/86400.0
 
-
 # Calculate r, want ~0.25, must be < 0.5 (for explicit method)
-r = ((alpha_ice)*(dt))/(2*dx*dx);# stability condition
+r = ((alpha_ice)*(dt))/(dx*dx);# stability condition
 print("The value of r is ", r)
 
 #ND Parameters
 diff_time_scale = (float(L**2))/(alpha_ice) #in seconds
-
-
 
 #%% More numerical parameters
 
@@ -70,8 +67,6 @@ plt.plot(x,u,"g-",label="Initial Profile")
 plt.title("Initial Distribution of Temperature in Sea Ice")
 plt.savefig("init_profile.png")
 plt.close()
-
-
 
 #Create an empty list for outputs and plots
 top_ice_temp_list = []

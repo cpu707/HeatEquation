@@ -40,7 +40,7 @@ x = np.linspace(0.0, 2.0, len(loaded_matrix_ex[0]))
 with writer.saving(fig, f"ex_{len(loaded_matrix_ex[1])}_node_solution.mp4", 100):    
     for i in range(len(loaded_matrix_ex)):
         y1 = loaded_matrix_ex[i]
-        plt.plot(x,y1)
+        plt.plot(x,y1,'r')
         plt.title(f"Time Evolution of Heat Equation Solver - EX")
         writer.grab_frame()
         plt.clf()
@@ -50,7 +50,7 @@ loaded_matrix_im = np.loadtxt(f'im-solver/im_output_{n+1}_nodes.txt', dtype='f',
 with writer.saving(fig, f"im_{len(loaded_matrix_im[1])}_node_solution.mp4", 100):    
     for i in range(len(loaded_matrix_im)):
         y2 = loaded_matrix_im[i]
-        plt.plot(x,y2)
+        plt.plot(x,y2,'b')
         plt.title(f"Time Evolution of Heat Equation Solver - IM")
         writer.grab_frame()
         plt.clf()
@@ -61,7 +61,7 @@ loaded_matrix_cn = np.loadtxt(f'cn-solver/cn_output_{n+1}_nodes.txt', dtype='f',
 with writer.saving(fig, f"cn_{len(loaded_matrix_cn[1])}_node_solution.mp4", 100):    
     for i in range(len(loaded_matrix_cn)):
         y3 = loaded_matrix_cn[i]
-        plt.plot(x,y3)
+        plt.plot(x,y3,'g')
         plt.title(f"Time Evolution of Heat Equation Solver - CN")
         writer.grab_frame()
         plt.clf()
@@ -74,9 +74,10 @@ with writer.saving(fig, f"all_solutions_at_once.mp4", 100):
         y2 = loaded_matrix_im[i]
         y3 = loaded_matrix_cn[i]
         plt.plot(x,y1,"r", label = "EX")
-        plt.plot(x,y2,"b", label ="IM")
+        plt.plot(x,y2,"b--", label ="IM")
         plt.plot(x,y3,"g",label="CN")
         plt.title(f"Time Evolution of Heat Equation Solver - All Three Methods")
+        plt.legend()
         writer.grab_frame()
         plt.clf()
 
