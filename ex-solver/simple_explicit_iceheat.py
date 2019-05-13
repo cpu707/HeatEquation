@@ -36,8 +36,8 @@ dx = L/n; # length between nodes
 x = np.linspace(0.0,L,n+1);
 
 # Time parameters
-dt = 0.5; # time between iterations, in seconds
-nt = 1000000; # amount of iterations
+dt = 20; # time between iterations, in seconds
+nt = 20000; # amount of iterations
 t_days = (dt*nt)/86400.0
 
 # Calculate r, want ~0.25, must be < 0.5 (for explicit method)
