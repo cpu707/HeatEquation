@@ -97,7 +97,7 @@ for i in range(0,nt):
     u[0]=air_temp(i*dt)
     
     # Now add the surface temp to its list
-    top_ice_temp_list.append(u[0])
+    top_ice_temp_list.append(float(u[0]))
     
     #append this array to solution file
     if (i*dt)%120 == 0: #every 60 seconds
@@ -136,9 +136,7 @@ title_T_it=f"Surface Temperature Evolution after {t_days:.2f} days"
 plt.plot(time_hours,top_ice_temp_list,label="Top of Ice Surface Temperature")
 plt.title(title_T_it)
 plt.xlabel("Time (hr)")
-#plt.yticks(locs, map(lambda x: "%.3f" % x, locs*1e0))
 plt.ylabel('Temperature (K)')
 plt.legend()
-plt.tight_layout()
 plt.savefig("surface_temp_temporal.png")
 plt.close()

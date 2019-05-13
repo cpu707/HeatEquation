@@ -71,8 +71,6 @@ plt.title("Initial Distribution of Temperature in Sea Ice")
 plt.savefig("init_profile.png")
 plt.close()
 
-
-
 #Create an empty list for outputs and plots
 top_ice_temp_list = []
 air_temp_list = []
@@ -107,7 +105,7 @@ for i in range(0,nt):
 u_soln = u_soln.transpose()
 np.savetxt(f"ex_output_{n+1}_nodes.txt",u_soln, fmt = '%.10f',delimiter=' ')
 
-
+plt.matshow(u_soln)
 
 #%% Plotting Main Results
 locs, labels = plt.yticks()
@@ -142,3 +140,4 @@ plt.legend()
 plt.tight_layout()
 plt.savefig("surface_temp_temporal.png")
 plt.close()
+
