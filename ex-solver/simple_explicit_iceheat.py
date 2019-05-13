@@ -37,7 +37,7 @@ x = np.linspace(0.0,L,n+1);
 
 # Time parameters
 dt = 0.5; # time between iterations, in seconds
-nt = 1000000; # amount of iterations
+nt = 1000; # amount of iterations
 t_days = (dt*nt)/86400.0
 
 # Calculate r, want ~0.25, must be < 0.5 (for explicit method)
@@ -102,7 +102,7 @@ for i in range(0,nt):
 u_soln = u_soln.transpose()
 np.savetxt(f"ex_output_{n+1}_nodes.txt",u_soln, fmt = '%.10f',delimiter=' ')
 
-
+#print(u[40])
 
 #%% Plotting Main Results
 locs, labels = plt.yticks()
