@@ -5,7 +5,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 from scipy import sparse
-#from scipy.sparse import linalg, diags
+from scipy.sparse import linalg, diags
 
 import matplotlib as mpl
 mpl.rcParams.update(mpl.rcParamsDefault)
@@ -65,7 +65,7 @@ A[n-1,n] = -r
 B[0,[0,1]] = [1.0,0.0]
 B[1,0] = r
 B[n,[n-1,n]] = [0.0,1.0]
-B[n-1,n] = -r
+B[n-1,n] = r
 
 #now convert todifferent format
 
@@ -128,7 +128,8 @@ for i in range(0,nt):
         u_soln = np.append(u_soln, u, axis=1)
     
 # write the solution matrix to a file
-np.savetxt(f"cn_output_{n+1}_nodes.txt",u_soln.transpose(), fmt = '%.10f',delimiter=' ')
+u_soln = u_soln.transpose()
+np.savetxt(f"cn_output_{n+1}_nodes.txt",u_soln, fmt = '%.10f',delimiter=' ')
 
 #%% Plotting Main Results
 locs, labels = plt.yticks()
