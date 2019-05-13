@@ -7,7 +7,6 @@
 #import needed libbraries
 import numpy as np
 import matplotlib.pyplot as plt
-import os
 
 import matplotlib as mpl
 mpl.rcParams.update(mpl.rcParamsDefault)
@@ -39,19 +38,26 @@ x = np.linspace(0.0,L,n+1);
 #ND Parameters
 diff_time_scale = (float(L**2))/(alpha_ice) #in seconds
 
-#Create Solution Vector (Tsoln) and initial profile (Tsoln_pr)
-Tsoln = np.zeros(n+1)
-Tsoln_pr = np.full(n+1, 272.65)
+#some inital profile
+def T_init(x):
+    return -14.0*np.sin(np.pi*x/L) + ((air_temp(0.0)*(L-x))+(T_w*x))/L
 
-#Set the initial boundary conditions
-Tsoln_pr[0] = air_temp(0.0)
-Tsoln_pr[-1] = 273.15
+u = T_init(x)
+#set initial BC as well
+u.shape = (len(u),1)
+u[0]=air_temp(0.0)
+u[-1]=273.15
+
+#set initial conditions to the matrix as the first row
+u_soln = u
 
 # Now we have a initial linear distribution of temperature in the sea ice
-plt.plot(x,Tsoln_pr,"g-",label="Initial Profile")
+plt.plot(x,u,"g-",label="Initial Profile")
 plt.title("Initial Distribution of Temperature in Sea Ice")
 plt.savefig("init_profile.png")
 plt.close()
+
+#%% More numerical parameters
 
 # Time parameters
 dt = 0.5; # time between iterations, in seconds
@@ -69,11 +75,6 @@ air_temp_list = []
 
 #%% Start Iteration and prepare plots
 
-folder = "giffiles"
-filelist = [f for f in os.listdir(folder)]
-for f in filelist:
-    os.remove(os.path.join(folder, f))
-
 for i in range(0,nt):
     
     # time in seconds to hours on a 24-hour clock will be used for air temp function
@@ -82,25 +83,32 @@ for i in range(0,nt):
     # Run through the FTCS with these BC
 #    Tsoln[1:n] = Tsoln[1:n]+r*(Tsoln_pr[2:n+1]-2*Tsoln_pr[1:n]+Tsoln_pr[0:n-1])   
     for j in range(1,n):
-        Tsoln[j] = Tsoln_pr[j] + r*(Tsoln_pr[j+1]-2*Tsoln_pr[j]+Tsoln_pr[j-1])
+        u[j] = u[j] + r*(u[j+1]-2*u[j]+u[j-1])
     
-    #Now set the top root as the new BC for Tsoln
-    #comment this out if you want static BC
-    Tsoln[0]=air_temp(i*dt)
-    
-    # Now add the values to their respective lists
-    air_temp_list.append(air_temp(i*dt))
-    top_ice_temp_list.append(Tsoln[0])
+    #force to be column vector
+    u.shape = (len(u),1)
 
-    #update Tsoln before next time step
-    Tsoln_pr = Tsoln
+    #update u top boundary
+    u[0]=i
+    
+    # Now add the surface temp to its list
+    top_ice_temp_list.append(u[0])
+    
+    #append this array to solution file
+    if (i*dt)%120 == 0: #every 60 seconds
+        u_soln = np.append(u_soln, u, axis=1)
+    
+# write the solution matrix to a file
+u_soln = u_soln.transpose()
+np.savetxt(f"ex_output_{n+1}_nodes.txt",u_soln, fmt = '%.10f',delimiter=' ')
+
 
 
 #%% Plotting Main Results
 locs, labels = plt.yticks()
     
 # Plot the figure after nt iterations with initial profile
-plt.plot(x,Tsoln,"k",label=f"After {t_days:.2f} days")
+plt.plot(x,u,"k",label=f"After {t_days:.2f} days")
 title1=f"Distribution of Temperature in Sea Ice after {t_days:.2f} days"
 plt.title(title1)
 plt.xlabel("x (m)")
